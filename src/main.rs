@@ -1,5 +1,7 @@
 use anyhow::{anyhow, bail, Result};
 use clap::{Parser, Subcommand, ValueEnum};
+use rsmorphy::dict_ru::DICT_PATH;
+use rsmorphy::{MorphAnalyzer, Source};
 use serde::Deserialize;
 use ydictionary::methods::{LookupRequest, LookupResult};
 
@@ -67,10 +69,23 @@ fn main() -> Result<()> {
 
     match args.method {
         Method::Langs => println!("{:?}", client.get_langs()?),
-        Method::Lookup { display, req } => print_lookup(client.lookup(req)?, display)?,
+        Method::Lookup { display, req } => print_lookup(client.lookup(maybe_morph(req))?, display)?,
     }
 
     Ok(())
+}
+
+fn maybe_morph(mut req: LookupRequest) -> LookupRequest {
+    if req.lang == "ru-en" {
+        let morph = MorphAnalyzer::from_file(DICT_PATH);
+        let normal = morph
+            .parse(&req.text)
+            .first()
+            .map(|w| w.lex.get_normal_form(&morph).to_string())
+            .unwrap_or(req.text);
+        req.text = normal;
+    }
+    req
 }
 
 fn print_lookup(res: LookupResult, display: DisplayStyle) -> Result<()> {
@@ -94,4 +109,17 @@ fn print_simple(res: LookupResult) -> Option<String> {
             })
         })
         .map(|(orig, trans)| format!("{orig} - {trans}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn morphing() {
+        assert_eq!(maybe_morph(LookupRequest::ru_en("твою")).text, "твой");
+        assert_eq!(maybe_morph(LookupRequest::ru_en("ищу")).text, "искать");
+        assert_eq!(maybe_morph(LookupRequest::ru_en("яблоко")).text, "яблоко");
+        assert_eq!(maybe_morph(LookupRequest::en_ru("friend")).text, "friend");
+    }
 }

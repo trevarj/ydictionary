@@ -12,6 +12,7 @@ clap = { version = "4.0.18", features = ["derive"] }
 colored = "2.0.0"
 dirs = "4.0.0"
 prettytable-rs = "0.9.0"
+rsmorphy = { git = "https://github.com/trevarj/rsmorphy.git", rev = "df53b950" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "1"
