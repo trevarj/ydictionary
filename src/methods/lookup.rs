@@ -11,6 +11,7 @@ pub struct LookupRequest {
     /// English to Russian.
     pub lang: String,
     /// The word or phrase to find in the dictionary.
+    #[clap(value_parser = validate_word)]
     pub text: String,
     /// The language of the user's interface for displaying names of parts of
     /// speech in the dictionary entry.
@@ -88,4 +89,29 @@ pub struct Attributes {
     pub pos: Option<String>,
     /// Aspect (if applicable)
     pub asp: Option<String>,
+}
+
+fn validate_word(s: &str) -> Result<String, String> {
+    let s = s.trim();
+    if s.chars().all(|c| c.is_alphabetic() || c == '-') {
+        Ok(s.to_string())
+    } else {
+        Err("Text contains non-alphabetic characters".to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validation() {
+        validate_word("hello").unwrap();
+        validate_word("привет").unwrap();
+        validate_word("   hello  ").unwrap();
+        validate_word("fixed-price").unwrap();
+        validate_word("myYpa$$word!").unwrap_err();
+        validate_word("12345").unwrap_err();
+        validate_word("hel lo").unwrap_err();
+    }
 }

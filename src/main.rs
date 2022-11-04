@@ -74,16 +74,18 @@ fn main() -> Result<()> {
 }
 
 fn print_lookup(res: LookupResult, display: DisplayStyle) -> Result<()> {
-    match display {
+    let out = match display {
         DisplayStyle::Simple => print_simple(res),
         DisplayStyle::List => todo!(),
         DisplayStyle::Verbose => todo!(),
     }
+    .ok_or_else(|| anyhow!("Translation not found"))?;
+    println!("{out}");
+    Ok(())
 }
 
-fn print_simple(res: LookupResult) -> Result<()> {
-    let out = res
-        .def
+fn print_simple(res: LookupResult) -> Option<String> {
+    res.def
         .first()
         .and_then(|e| {
             e.tr.as_ref().and_then(|tr| {
@@ -92,7 +94,4 @@ fn print_simple(res: LookupResult) -> Result<()> {
             })
         })
         .map(|(orig, trans)| format!("{orig} - {trans}"))
-        .unwrap_or_else(|| "Translation not found.".to_string());
-    println!("{out}");
-    Ok(())
 }
